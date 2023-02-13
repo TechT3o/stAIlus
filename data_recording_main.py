@@ -8,17 +8,20 @@ import time
 rec = Recorder()
 SAVE_PATH = os.path.join(os.getcwd(), 'audio_data')
 check_and_create_directory(SAVE_PATH)
-SAMPLE_NO = 5
-SECONDS = 5
-save_dir = os.path.join(SAVE_PATH, f'recording_{get_timestamp()}')
-check_and_create_directory(save_dir)
-actions = ['up', 'down', 'neutral']
+SAMPLE_NO = 2
+SECONDS = 3
+
+# save_dir = os.path.join(SAVE_PATH, f'recording_{get_timestamp()}')
+# check_and_create_directory(save_dir)
+actions = ['B', 'K', 'L']
 
 while True:
     if pause(ord('S')):
         time.sleep(2)
         print('Recording session started')
         for action in actions:
+            save_dir = os.path.join(SAVE_PATH, action)
+            check_and_create_directory(save_dir)
             print(f'Recording {action} action')
             for sample in range(SAMPLE_NO):
                 if pause(ord(' ')):

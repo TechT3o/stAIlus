@@ -1,8 +1,9 @@
 from data_processing import DataProcessor
 from ml_model import MLModel
 from recorder import Recorder
-from scipy.signal import spectrogram
-import win32api
+from statics import normalize_data
+import numpy as np
+
 
 recorder = Recorder()
 ml_model = MLModel()
@@ -18,35 +19,23 @@ def oh_encode(number):
         return [0, 0, 1]
 
 
-while True:
-    if win32api.GetAsyncKeyState(ord('S'))&0x0001 > 0:
-        print('Recording started')
-        data_array = []
-        labels = []
-        for action in range(2):
-            recordings = []
-            for recording in range(4):
-                print(f'Action {action+1} recording {recording+1}')
-                audio_recording = recorder.record_audio(seconds=3)
-                freq, time, spec = spectrogram(audio_recording, recorder.RATE)
-                print(spec.shape)
-                recordings.append(spec)
-            data_array.append(recordings)
-            labels.append(oh_encode(action))
+model = MLModel()
+processor = DataProcessor()
+processor.load_data()
+processor.process_data()
+normalized_data, mean, std = normalize_data(processor.recordings)
 
-    if win32api.GetAsyncKeyState(ord('T'))&0x0001 > 0:
-        print('Training started')
-        ml_model.fcn_model()
-        ml_model.train_model(data_array, labels)
+un = normalized_data[0][:, :120, :]
+dos = normalized_data[1][:, :20, :]
+tres = normalized_data[2][:, :90, :]
+normalized_data = normalized_data.tolist()
+normalized_data[0] = un.tolist()
+normalized_data[1] = dos.tolist()
+normalized_data[2] = tres.tolist()
+#print(normalized_data.shape, normalized_data[0])
+model.fcn_model()
+labels = [[1, 0, 0]]*5 + [[0, 1, 0]]*5 + [[0, 0, 1]]*5
+model.train_model(normalized_data, np.array(labels))
 
-    if win32api.GetAsyncKeyState(ord('P'))&0x0001 > 0:
-        print('Testing started')
-        while True:
-            if win32api.GetAsyncKeyState(ord('P')) & 0x0001 > 0:
-                print('Testing started')
-                audio_recording = recorder.record_audio(seconds=3)
-                freq, time, spec = spectrogram(audio_recording, recorder.RATE)
-                prediction = ml_model.model.predict(spec)
-                print(prediction)
 
 

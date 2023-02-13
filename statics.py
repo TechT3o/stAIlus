@@ -3,7 +3,9 @@ import os
 import time
 import win32api
 import numpy as np
-
+import librosa
+from typing import Any
+from sklearn.model_selection import train_test_split
 
 def plot_audio(data):
     if data.ndim > 1:
@@ -57,3 +59,45 @@ def normalize_data(array):
     std = np.std(array, axis=0)
     X_normalized = (array - mean) / std
     return X_normalized, mean, std
+
+def feature_chromagram(waveform, sample_rate):
+    # STFT computed here explicitly; mel spectrogram and MFCC functions do this under the hood
+    stft_spectrogram = np.abs(librosa.stft(waveform))
+    # Produce the chromagram for all STFT frames and get the mean of each column of the resulting matrix to create a feature array
+    chromagram = np.mean(librosa.feature.chroma_stft(S=stft_spectrogram, sr=sample_rate).T, axis=0)
+    return chromagram
+
+def feature_melspectrogram(waveform, sample_rate):
+    # Produce the mel spectrogram for all STFT frames and get the mean of each column of the resulting matrix to create a feature array
+    # Using 8khz as upper frequency bound should be enough for most speech classification tasks
+    melspectrogram = np.mean(librosa.feature.melspectrogram(y=waveform, sr=sample_rate, n_mels=128, fmax=8000).T,
+                             axis=0)
+    return melspectrogram
+
+def feature_mfcc(waveform, sample_rate):
+    # Compute the MFCCs for all STFT frames and get the mean of each column of the resulting matrix to create a feature array
+    # 40 filterbanks = 40 coefficients
+    mfc_coefficients = np.mean(librosa.feature.mfcc(y=waveform, sr=sample_rate, n_mfcc=60).T, axis=0)
+    return mfc_coefficients
+
+def train_test_val_split(data_x, data_y, test_fraction, val_fraction) -> tuple[Any, Any, Any, Any, Any, Any]:
+    """
+    Splits data in train, test and validation
+    :return: None
+    """
+
+    test_fraction = test_fraction / (1 - val_fraction)
+
+    X_train, X_val, y_train, y_val = train_test_split(data_x, data_y, test_size=val_fraction,
+                                                      random_state=42, shuffle=True)
+
+    X_train, X_test, y_train, y_test = train_test_split(X_train, y_train, test_size=test_fraction,
+                                                        random_state=42, shuffle=True)
+    return X_train,  X_val, X_test, y_train, y_val, y_test
+
+def create_feature_matrix(recording, rate):
+    chromagram = feature_chromagram(recording, rate)
+    melspectrogram = feature_melspectrogram(recording, rate)
+    mfc_coefficients = feature_mfcc(recording, rate)
+    # use np.hstack to stack our feature arrays horizontally to create a feature matrix
+    return np.hstack((chromagram, melspectrogram, mfc_coefficients))

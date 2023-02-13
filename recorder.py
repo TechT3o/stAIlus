@@ -10,8 +10,9 @@ class Recorder:
 
         self.CHUNK = 1024
         self.FORMAT = pyaudio.paInt16
+        # self.FORMAT = pyaudio.paFloat32
         self.CHANNELS = 1
-        self.RATE = 44100
+        self.RATE = 48000
         self.RECORD_SECONDS = 5
         self.p = pyaudio.PyAudio()
         self.stream_in = self.p.open(format=self.FORMAT,
@@ -25,6 +26,20 @@ class Recorder:
                                       rate=self.RATE,
                                       output=True,
                                       frames_per_buffer=self.CHUNK)
+
+    # def record_audio(self, seconds):
+    #     self.stream_in.start_stream()
+    #
+    #     frames = []
+    #
+    #     for i in range(0, int(self.RATE / self.CHUNK * seconds)):
+    #         data = self.stream_in.read(self.CHUNK)
+    #         int_data = np.frombuffer(data, dtype=np.int16)
+    #         frames.append(int_data)
+    #
+    #     self.stream_in.stop_stream()
+    #
+    #     return np.array(frames)
 
     def record_audio(self, seconds):
         self.stream_in.start_stream()
@@ -92,7 +107,7 @@ if __name__ == "__main__":
 
     rec = Recorder()
     rec.list_devices()
-    recording = rec.record_audio(10)
+    recording = rec.record_audio(4)
     plot_audio(recording)
     power_spectrum, f, t = plot_spectrogram(recording, rec.RATE)
     print(np.array(power_spectrum).shape)
