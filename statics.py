@@ -101,3 +101,13 @@ def create_feature_matrix(recording, rate):
     mfc_coefficients = feature_mfcc(recording, rate)
     # use np.hstack to stack our feature arrays horizontally to create a feature matrix
     return np.hstack((chromagram, melspectrogram, mfc_coefficients))
+
+def add_noise(wav, amplitude, spread = 1):
+    return wav + amplitude * np.random.normal(0, spread, len(wav))
+
+def time_shift(wav, sr, amount):
+    return np.roll(wav, int(sr / amount))
+
+def time_stretch(wav, factor):
+    factor = 0.4
+    return librosa.effects.time_stretch(wav, factor)

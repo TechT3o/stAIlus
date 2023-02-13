@@ -2,15 +2,15 @@ import pyaudio
 import numpy as np
 from scipy.io.wavfile import write, read
 from statics import plot_audio, plot_spectrogram
-
+from statics import pause
 
 class Recorder:
 
     def __init__(self):
 
         self.CHUNK = 1024
-        self.FORMAT = pyaudio.paInt16
-        # self.FORMAT = pyaudio.paFloat32
+        #self.FORMAT = pyaudio.paInt16
+        self.FORMAT = pyaudio.paFloat32
         self.CHANNELS = 1
         self.RATE = 48000
         self.RECORD_SECONDS = 5
@@ -48,12 +48,23 @@ class Recorder:
 
         for i in range(0, int(self.RATE / self.CHUNK * seconds)):
             data = self.stream_in.read(self.CHUNK)
-            int_data = np.frombuffer(data, dtype=np.int16)
+            int_data = np.frombuffer(data, dtype=np.float32)
             frames.append(int_data)
 
         self.stream_in.stop_stream()
 
         return np.array(frames)
+
+    def record_audio_key(self):
+        self.stream_in.start_stream()
+        frames = []
+        while True:
+            data = self.stream_in.read(self.CHUNK)
+            int_data = np.frombuffer(data, dtype=np.float32)
+            frames.append(int_data)
+            if pause(ord(' ')):
+                self.stream_in.stop_stream()
+                return np.array(frames)
 
     def terminate_pyaudio(self):
         if self.stream_in.is_active():
@@ -108,6 +119,7 @@ if __name__ == "__main__":
     rec = Recorder()
     rec.list_devices()
     recording = rec.record_audio(4)
+    print(np.max(recording))
     plot_audio(recording)
     power_spectrum, f, t = plot_spectrogram(recording, rec.RATE)
     print(np.array(power_spectrum).shape)

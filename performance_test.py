@@ -2,15 +2,14 @@ from typing import Tuple, Any
 import numpy as np
 from ml_model import MLModel
 from scipy.io.wavfile import read
-from data_processing import DataProcessor
+
 import os
-from statics import normalize_data, plot_audio, plot_spectrogram, train_test_val_split
+from statics import normalize_data, train_test_val_split
 
 
 DATA_PATH = r'C:\Users\thpap\PycharmProjects\stAIlus\HCI_Trials'
 
-processor = DataProcessor(DATA_PATH)
-model = MLModel()
+model = MLModel(DATA_PATH)
 
 action_sample_numbers = []
 
@@ -21,19 +20,17 @@ for index, action in enumerate(os.listdir(DATA_PATH)):
         print(os.path.join(action_path, sample))
         rate, signal = read(os.path.join(action_path, sample))
 
-        processor.recordings.append(signal.T[0])
+        model.processor.recordings.append(signal.T[0])
 
 print(signal.T[0].shape)
 # plot_audio(signal.T[0])
 # plot_spectrogram(signal.T[0], processor.recorder.RATE)
 
-processor.process_data_irregular_shapes()
-normalized_data, mean, std = normalize_data(processor.recordings)
-labels = [[1, 0, 0]] * action_sample_numbers[0] + [[0, 1, 0]] * action_sample_numbers[1] + [[0, 0, 1]] * action_sample_numbers[2]
-print(processor.signal_lengths)
+
+print(model.processor.signal_lengths)
 X_train,  X_val, X_test, y_train, y_val, y_test = train_test_val_split(normalized_data, labels, 0.1, 0.3)
 # X_train,  X_val, X_test, y_train, y_val, y_test = train_test_val_split(normalized_data, labels, 0.2, 0.2)
-sec_train,  sec_val, sec_test, y_train, y_val, y_test = train_test_val_split(processor.signal_lengths, labels, 0.1, 0.3)
+sec_train,  sec_val, sec_test, y_train, y_val, y_test = train_test_val_split(model.processor.signal_lengths, labels, 0.1, 0.3)
 # print(processor.signal_lengths)
 # model.fcn_model()
 print(X_train.shape)

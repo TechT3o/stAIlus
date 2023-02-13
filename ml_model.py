@@ -1,18 +1,32 @@
 import tensorflow as tf
 from sklearn.svm import SVC
 from data_processing import DataProcessor
-
+from statics import add_noise, time_stretch, time_shift
+from tqdm import tqdm
 
 class MLModel:
     def __init__(self, data_path):
+
+
         self.dropout_rate = 0.2
         self.len_classes = 3
         self.model = tf.keras.Model
         self.BATCH_SIZE = 1
         self.processor = DataProcessor(data_path)
-        self.processor.load_nathan_data()
+
+        #self.processor.pre_process_spectrogram()
+        # self.X_train, self.X_test, self.y_train, self.y_test = self.processor.train_test_split_data()
+        # self.X_train, self.X_test, self.y_train, self.y_test = self.processor.augmented_train_test_split_data()
+
+    def augmentation(self):
+        self.processor.augment_data()
+        # self.processor.pre_process_representation_ensemble()
+        self.processor.pre_process_augmented_ensemble()
+        self.split_augmented_data()
+
+    def normal(self):
         self.processor.pre_process_representation_ensemble()
-        self.X_train, self.X_test, self.y_train, self.y_test = self.processor.train_test_split_data()
+        self.split_data()
 
     def fcn_model(self):
         # Input layer
@@ -170,10 +184,27 @@ class MLModel:
     #         output_text.append(result)
     #     return output_text
 
-    def build_svm(self):
+    def build_train_test_svm(self):
         model = SVC(kernel='linear', probability= True)
         model.fit(self.X_train, self.y_train)
         score = model.score(self.X_test, self.y_test)
         print(score)
         #print(model.predict_proba(self.X_test))
         return model
+
+    def build_artificial_dataset(self, num_samples: int):
+
+
+        features_dataset = tf.data.Dataset.from_tensor_slices(self.processor.processed_data)
+        labels_dataset = tf.data.Dataset.from_tensor_slices(self.processor.labels)
+        signal_lengths_dataset = tf.data.Dataset.from_tensor_slices(self.processor.signal_lengths)
+
+        dataset = tf.data.Dataset.zip((features_dataset, labels_dataset))
+
+        return dataset
+
+    def split_augmented_data(self):
+        self.X_train, self.X_test, self.y_train, self.y_test = self.processor.augmented_train_test_split_data()
+
+    def split_data(self):
+        self.X_train, self.X_test, self.y_train, self.y_test = self.processor.train_test_split_data()
